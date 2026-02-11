@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🎓 SSistema de Orientación Vocacional")
+st.title("🎓 Sistema de Orientación Vocacional")
 st.markdown("Completa los datos y los 3 tests para obtener tu orientación.")
 
 # --- Inicialización del Estado ---
@@ -591,4 +591,5 @@ with tab5:
                 for key in st.session_state.keys():
                     del st.session_state[key]
                 st.rerun()
+
 
