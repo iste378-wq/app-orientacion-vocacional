@@ -10,8 +10,9 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🎓 Sistema de Orientación Vocacional")
-st.markdown("Completa los datos y los 3 tests para obtener tu orientación.")
+st.title("🎓 ISTE ")
+st.title("Sistema de Orientación Vocacional")
+st.markdown("""Completa los datos y los 3 tests para obtener tu orientación.\n\nAquí no vas a encontrar profesiones sino actividades. """)
 
 # --- Inicialización del Estado ---
 if 'student_data' not in st.session_state:
@@ -37,24 +38,52 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # --- Tab 1: Datos del Estudiante ---
 with tab1:
     st.header("Datos Personales")
-    with st.form("student_form"):
-        nombre = st.text_input("Nombre Completo")
-        edad = st.number_input("Edad", min_value=10, max_value=100, step=1)
-        celular = st.text_input("Número de Celular")
-        unidad_educativa = st.text_input("Unidad Educativa")
-        
-        submitted = st.form_submit_button("Guardar Datos")
-        if submitted:
-            if nombre and edad and celular and unidad_educativa:
-                st.session_state.student_data = {
-                    "Nombre": nombre,
-                    "Edad": edad,
-                    "Celular": celular,
-                    "Unidad Educativa": unidad_educativa
-                }
-                st.success("✅ Datos guardados correctamente. Pasa al siguiente test.")
-            else:
-                st.error("⚠️ Por favor completa todos los campos.")
+    # Eliminamos st.form para permitir interactividad dinámica
+    st.write("Por favor ingresa tus datos:")
+    
+    nombre = st.text_input("Nombre Completo")
+    edad = st.number_input("Edad", min_value=10, max_value=100, step=1)
+    celular = st.text_input("Número de Celular")
+    
+    COLEGIOS = [
+        "UE Ambato", "UE Luis A. Martínez", "UE Rumiñahui", "UE González Suarez", 
+        "UE San Alfonso", "UE Sagrada Familia", "Centro Escolar Andino", "UE Suizo", 
+        "UE Adventista", "UE Ricardo Descalzzi", "UE Rodríguez Albornoz", "UE Génesis", 
+        "UE Las Américas", "UE Juan B. Vela", "UE Bautista", "UE Teresa Flor", 
+        "UE Juan Montalvo", "UE Pedro Fermín Cevallos", "Grupos de Interés - ESE", "Otro"
+    ]
+    
+    colegio_seleccion = st.selectbox("Selecciona tu Unidad Educativa", COLEGIOS)
+    
+    unidad_educativa = colegio_seleccion
+    otro_colegio = None
+    
+    # Lógica condicional: Solo mostrar input si selecciona "Otro"
+    if colegio_seleccion == "Otro":
+        otro_colegio = st.text_input("Si seleccionaste 'Otro', escribe el nombre aquí:")
+        if otro_colegio:
+            unidad_educativa = otro_colegio
+        else:
+            unidad_educativa = None # Para validación posterior
+
+    if st.button("Guardar Datos"):
+        # Validación
+        if colegio_seleccion == "Otro" and not otro_colegio:
+            st.error("⚠️ Por favor especifica el nombre de tu Unidad Educativa.")
+        elif nombre and edad and celular and unidad_educativa:
+            st.session_state.student_data = {
+                "Nombre": nombre,
+                "Edad": edad,
+                "Celular": celular,
+                "Unidad Educativa": unidad_educativa
+            }
+            st.success("✅ Datos guardados correctamente. Pasa al siguiente test.")
+        else:
+            st.error("⚠️ Por favor completa todos los campos.")
+    
+    st.caption("Esta encuesta cumple con el requerimiento de protección de datos personales.")
+
+
 
 # --- Tab 2: Test 1 (Intereses) ---
 with tab2:
@@ -62,6 +91,7 @@ with tab2:
     st.write("""
     **Instrucciones:**
     *   Lee atentamente cada una de las actividades.
+    *   Puedes señalar una o varias opciones.
     *   Marca la opción únicamente si la actividad te llama la atención. Si no te interesa, déjala vacía.
     *   En general no existen respuestas correctas o incorrectas; lo importante es que contestes con sinceridad y confianza para que puedas conocer mejor tus intereses vocacionales.
     """)
@@ -205,6 +235,7 @@ with tab3:
     **Instrucciones:**
     A continuación encontrarás un conjunto de actividades:
     *   Si te agrada realizar la actividad propuesta, marca la casilla correspondiente.
+    *   Puedes señalar una o varias opciones.
     *   Si no te agrada o te es indiferente, deja la casilla vacía.
     *   Recuerda contestar con rapidez y sinceridad.
     """)
@@ -478,8 +509,8 @@ with tab4:
                     category = cat
                     break
             
-            # Slider de 1 a 5, por defecto 1 (Me desagrada mucho)
-            val = st.slider(f"**{q_id}.** {q_text}", 1, 5, 1, key=f"t3_q{q_id}")
+            # Slider de 1 a 5, por defecto 3 (Me desagrada mucho)
+            val = st.slider(f"**{q_id}.** {q_text}", 1, 5, 3, key=f"t3_q{q_id}")
             if category in scores_t3:
                 scores_t3[category] += val
     
@@ -591,5 +622,3 @@ with tab5:
                 for key in st.session_state.keys():
                     del st.session_state[key]
                 st.rerun()
-
-
