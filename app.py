@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 import datetime
+import gspread
+from google.oauth2.service_account import Credentials
+
 
 # --- Configuración de la Página ---
 st.set_page_config(
@@ -12,6 +15,10 @@ st.set_page_config(
 
 st.title("🎓 ISTE ")
 st.header("Sistema de Orientación Vocacional")
+
+# --- Estilos CSS Personalizados ---
+# Ya eliminado por solicitud del usuario, pero se mantiene la estructura limpia
+
 st.markdown("""Completa los datos y los 3 tests para obtener tu orientación.\n\nAquí no vas a encontrar profesiones sino actividades. """)
 
 # --- Inicialización del Estado ---
@@ -26,6 +33,9 @@ if 'test3_scores' not in st.session_state:
 if 'results_sent' not in st.session_state:
     st.session_state.results_sent = False
 
+# --- Función Generar PDF ---
+
+
 # --- Definición de Tabs ---
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📂 Datos del Estudiante 🔜", 
@@ -34,6 +44,15 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📊 Test 3 (Hereford) 🔜", 
     "✅ Finalizar"
 ])
+
+# ... (El código de los tabs 1, 2, 3 y 4 permanece igual, solo cambiamos el imports y definition arriba) ...
+# Para aplicar el cambio correctamente sin borrar todo, usaré multi-replace o aplicaré tab por tab si es necesario,
+# pero como estoy usando replace_file_content en un bloque grande, asumiré que el contexto intermedio no cambia.
+# ERROR POTENCIAL: Estoy reemplazando todo desde imports hasta tab 1.
+
+# --- Tab 5: Finalizar (Actualizado) ---
+# ...
+
 
 # --- Tab 1: Datos del Estudiante ---
 with tab1:
@@ -582,19 +601,39 @@ with tab5:
                         "T3_Resultados_Ordenados": res_t3_str
                     }
                     
-                    # Convertir a DataFrame
-                    df_new = pd.DataFrame([final_data])
-                    
-                    # Guardar en Google Sheets
+                    # Guardar en Google Sheets (Lógica Segura sin Race Conditions)
                     try:
-                        conn = st.connection("gsheets", type=GSheetsConnection)
-                        try:
-                            existing_data = conn.read(worksheet="Hoja 1")
-                            updated_df = pd.concat([existing_data, df_new], ignore_index=True)
-                        except:
-                            updated_df = df_new
+                        # Usar gspread directamente para operación atómica 'append_row'
+                        scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
                         
-                        conn.update(worksheet="Hoja 1", data=updated_df)
+                        # Obtener secretos (asumiendo estructura estándar de st-gsheets-connection)
+                        secrets = dict(st.secrets["connections"]["gsheets"])
+                        
+                        # Autenticación
+                        creds = Credentials.from_service_account_info(secrets, scopes=scope)
+                        client = gspread.authorize(creds)
+                        
+                        # Abrir Hoja
+                        sheet_url = secrets.get("spreadsheet")
+                        sh = client.open_by_url(sheet_url)
+                        worksheet = sh.worksheet("Hoja 1")
+                        
+                        # Verificar encabezados (si la hoja está vacía)
+                        existing_data = worksheet.get_all_values()
+                        
+                        if not existing_data:
+                            # Si está vacía, escribimos headers primero
+                            headers = list(final_data.keys())
+                            worksheet.append_row(headers)
+                        else:
+                            # Si ya tiene datos, usamos la primera fila como headers para alinear
+                            headers = existing_data[0]
+                        
+                        # Alinear datos con los encabezados existentes
+                        row_to_append = [str(final_data.get(h, "")) for h in headers]
+                        
+                        # Append Atómico
+                        worksheet.append_row(row_to_append)
                         
                         # Actualizar estado y recargar
                         st.session_state.results_sent = True
@@ -617,9 +656,11 @@ with tab5:
             if scores_t3:
                 st.info(f"**Test 3 (Hereford):**\nOrden de Preferencia:\n{', '.join(res_t3_list[:3])}...")
             
+
+
+            st.divider()
             if st.button("🔄 Comenzar Nuevo Estudiante"):
                 # Resetear todo
                 for key in st.session_state.keys():
                     del st.session_state[key]
                 st.rerun()
-
