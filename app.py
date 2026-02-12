@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 st.title("🎓 ISTE ")
-st.title("Sistema de Orientación Vocacional")
+st.header("Sistema de Orientación Vocacional")
 st.markdown("""Completa los datos y los 3 tests para obtener tu orientación.\n\nAquí no vas a encontrar profesiones sino actividades. """)
 
 # --- Inicialización del Estado ---
@@ -622,3 +622,4 @@ with tab5:
                 for key in st.session_state.keys():
                     del st.session_state[key]
                 st.rerun()
+
