@@ -8,7 +8,7 @@ from google.oauth2.service_account import Credentials
 
 # --- Configuración de la Página ---
 st.set_page_config(
-    page_title="Orientación Vocacional",
+    page_title="Orientación  Vocacional",
     page_icon="🎓",
     layout="wide"
 )
@@ -664,3 +664,4 @@ with tab5:
                 for key in st.session_state.keys():
                     del st.session_state[key]
                 st.rerun()
+
